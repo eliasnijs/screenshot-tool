@@ -1,7 +1,5 @@
 #include "lib/numbertypes.c"
 
-
-
 int
 main()
 {
