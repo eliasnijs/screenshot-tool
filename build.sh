@@ -7,7 +7,7 @@ VERSION="00"
 
 # includes and libs
 INCS=""
-LIBS="" 
+LIBS="-lX11"
 
 # flags
 CPPFLAGS="-D_DEFAULT_SOURCE -D_BSD_SOURCE -D_POSIX_C_SOURCE=2 -DVERSION=\"${VERSION}\""
