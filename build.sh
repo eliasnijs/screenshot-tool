@@ -1,7 +1,5 @@
-
-
-# screenshot info
 SOURCE="sst.c"
+# screenshot info
 NAME="sst"
 VERSION="00"
 
