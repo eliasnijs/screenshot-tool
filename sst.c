@@ -11,7 +11,10 @@ typedef double real64;
 
 #include <stdio.h>
 #include <stdlib.h>
+
+#include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <X11/cursorfont.h>
 
 #include "lib/multimedia/colors.c"
 #include "lib/multimedia/ppm.c"
@@ -19,24 +22,79 @@ typedef double real64;
 int
 main(void)
 {
-  Display* display = XOpenDisplay(0);
-
-  uint32 x1 = 0;
-  uint32 y1 = 0;
-  uint32 x2 = 1920;
-  uint32 y2 = 1080;
   char* filename = "image.ppm";
-
-  uint32 width = x2 - x1;
-  uint32 height = y2 - y1;
+  uint32 x = 0;
+  uint32 y = 0;
+  uint32 rx = 0;
+  uint32 ry = 0;
+  int32 w = 0;
+  int32 h = 0;
+  
+  Display *display = XOpenDisplay(0);
   Window root = DefaultRootWindow(display);
-  XImage *image = XGetImage(display, root, x1, y1, width, height, AllPlanes, ZPixmap);
 
-  char *values = BGRA_to_RGB(image->data, width * height * 4);
-  ppm_write(filename, values, width, height);
-  free(values);
+  Cursor cursor1 = XCreateFontCursor(display, XC_left_ptr);
+  Cursor cursor2 = XCreateFontCursor(display, XC_diamond_cross);
 
-  XDestroyImage(image);
+
+  XGrabPointer(display, root, False, ButtonMotionMask | ButtonPressMask | ButtonReleaseMask, 
+               GrabModeAsync, GrabModeAsync, root, cursor1, CurrentTime);
+  
+  XGCValues xgc_values = {0};
+  xgc_values.background = XBlackPixel(display, 0);
+  xgc_values.foreground = XWhitePixel(display, 0);
+  xgc_values.function = GXxor;
+  xgc_values.plane_mask = xgc_values.background ^ xgc_values.foreground;
+  xgc_values.subwindow_mode = IncludeInferiors;
+  GC gc = XCreateGC(display, root, 
+                  GCFunction | GCForeground | GCBackground | GCSubwindowMode, 
+                  &xgc_values);
+  
+  XEvent event;
+  uint8 running = 2;
+  while (running) {
+    while (XPending(display)) {
+      XNextEvent(display, &event);
+      switch (event.type) {
+        case (MotionNotify): {
+          if (running == 1) {
+            XDrawRectangle(display, root, gc, rx, ry, w, h);
+            w = event.xbutton.x - x;
+            h = event.xbutton.y - y;
+            rx = (w < 0) ? x + w : x;
+            ry = (h < 0)? y + h : y;
+            w = ((w >> 31) + w) ^ (w >> 31);
+            h = ((h >> 31) + h) ^ (h >> 31);
+            XDrawRectangle(display, root, gc, rx, ry, w, h);
+            XFlush(display);
+          }
+        } break;
+        case (ButtonPress): {
+          x = event.xbutton.x; 
+          y = event.xbutton.y;  
+          XChangeActivePointerGrab(display, ButtonMotionMask | ButtonReleaseMask,
+                                   cursor2, CurrentTime);
+          XDrawRectangle(display, root, gc, x, y, w, h);
+          --running;
+        } break;
+        case (ButtonRelease): {
+          --running;
+          break;
+        }
+      }
+    }
+  }
+  XFlush(display);
+  if (w || h) {
+    XDrawRectangle(display, root, gc, rx, ry, w, h);
+    XImage *image = XGetImage(display, root, rx, ry, w, h, AllPlanes, ZPixmap);
+    char *values = BGRA_to_RGB(image->data, w * h * 4);
+    ppm_write(filename, values, w, h);
+    free(values);
+    XDestroyImage(image);
+  }
+ 
+  XFreeGC(display, gc);
   XCloseDisplay(display);
   return(0);
 }

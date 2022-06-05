@@ -1,8 +1,7 @@
 
 TODOs
 
-1. make gui to get (x1,y1) and (x2,y2)
-2. save to png (please write your own compression code...) 
-3. get filename from commandline arg
-4. save to copypaste buffer?
+1. save to png (please write your own compression code...) 
+2. get filename from commandline arg
+3. save to copypaste buffer?
 
