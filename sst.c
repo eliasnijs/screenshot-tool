@@ -16,8 +16,8 @@ typedef double real64;
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
 
-#include "lib/multimedia/colors.c"
-#include "lib/multimedia/ppm.c"
+#include "lib/media/colors.c"
+#include "lib/media/ppm.c"
 
 int
 main(void)
@@ -36,7 +36,6 @@ main(void)
   Cursor cursor1 = XCreateFontCursor(display, XC_left_ptr);
   Cursor cursor2 = XCreateFontCursor(display, XC_diamond_cross);
 
-
   XGrabPointer(display, root, False, ButtonMotionMask | ButtonPressMask | ButtonReleaseMask, 
                GrabModeAsync, GrabModeAsync, root, cursor1, CurrentTime);
   
@@ -44,44 +43,44 @@ main(void)
   xgc_values.background = XBlackPixel(display, 0);
   xgc_values.foreground = XWhitePixel(display, 0);
   xgc_values.function = GXxor;
-  xgc_values.plane_mask = xgc_values.background ^ xgc_values.foreground;
   xgc_values.subwindow_mode = IncludeInferiors;
+  xgc_values.line_width = 2;
   GC gc = XCreateGC(display, root, 
-                  GCFunction | GCForeground | GCBackground | GCSubwindowMode, 
-                  &xgc_values);
+                    GCFunction | GCForeground | GCBackground | GCSubwindowMode | GCLineWidth, 
+                    &xgc_values);
   
   XEvent event;
-  uint8 running = 2;
+  uint8 running = 2; /* 2: selection not started, 1: selection started, 0: selection done */
   while (running) {
-    while (XPending(display)) {
+    while (running && XPending(display)) {
       XNextEvent(display, &event);
       switch (event.type) {
-        case (MotionNotify): {
-          if (running == 1) {
-            XDrawRectangle(display, root, gc, rx, ry, w, h);
-            w = event.xbutton.x - x;
-            h = event.xbutton.y - y;
-            rx = (w < 0) ? x + w : x;
-            ry = (h < 0)? y + h : y;
-            w = ((w >> 31) + w) ^ (w >> 31);
-            h = ((h >> 31) + h) ^ (h >> 31);
-            XDrawRectangle(display, root, gc, rx, ry, w, h);
-            XFlush(display);
-          }
-        } break;
-        case (ButtonPress): {
-          x = event.xbutton.x; 
-          y = event.xbutton.y;  
-          XChangeActivePointerGrab(display, ButtonMotionMask | ButtonReleaseMask,
-                                   cursor2, CurrentTime);
-          XDrawRectangle(display, root, gc, x, y, w, h);
-          --running;
-        } break;
-        case (ButtonRelease): {
-          --running;
-          break;
+      case (MotionNotify):
+        if (running == 1) {
+          XDrawRectangle(display, root, gc, rx, ry, w, h);
+          w = event.xbutton.x - x;
+          h = event.xbutton.y - y;
+          rx = (w < 0) ? x + w : x;
+          ry = (h < 0)? y + h : y;
+          w = ((w >> 31) + w) ^ (w >> 31);
+          h = ((h >> 31) + h) ^ (h >> 31);
+          XDrawRectangle(display, root, gc, rx, ry, w, h);
+          XFlush(display);
         }
+        break;
+      case (ButtonPress):
+        x = event.xbutton.x; 
+        y = event.xbutton.y;  
+        XChangeActivePointerGrab(display, ButtonMotionMask | ButtonReleaseMask,
+                                 cursor2, CurrentTime);
+        XDrawRectangle(display, root, gc, x, y, w, h);
+        running = 1;
+        break;
+      case (ButtonRelease):
+        running = 0;
+        break; 
       }
+      XSync(display, 1);
     }
   }
   XFlush(display);
