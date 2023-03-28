@@ -1,11 +1,11 @@
-SOURCE="sst.c"
+SOURCE="tst.c"
 # screenshot info
-NAME="sst"
+NAME="tst"
 VERSION="00"
 
 # includes and libs
 INCS=""
-LIBS="-lX11"
+LIBS="-lX11 -ldl -lm"
 
 # flags
 CPPFLAGS="-D_DEFAULT_SOURCE -D_BSD_SOURCE -D_POSIX_C_SOURCE=2 -DVERSION=\"${VERSION}\""

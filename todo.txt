@@ -1,8 +1,0 @@
-
-                          TODOs
-
-1.  _   F   save to png (please write your own compression code...) 
-2.  _   F   get filename from commandline arg
-3.  _   F   save to copypaste buffer
-4.  _   B   drawing performance is really low right now, needs a fix 
-5.  _   B   drawing over updating window breaks
